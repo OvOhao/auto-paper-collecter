@@ -185,15 +185,17 @@ python run.py
 
 ---
 
-## 🤝 参与贡献 · Contributing
+## 🤝 一起建设 · Contributing
 
-这是一个**业余时间打磨的小项目**，非常欢迎任何形式的参与：
+这是一个**业余时间打磨的开源小项目**，它的成长离不开你 —— **非常欢迎大家一起把它做得更好！** 🌱✨
 
-- 🐛 发现 Bug → 提个 [Issue](../../issues)
-- 💡 有好点子 → 在 [Discussions / Issues](../../issues) 聊聊
-- 🔧 想动手 → Fork → 改 → 提 **Pull Request**
+- 🐛 **发现 Bug** → 提个 [Issue](../../issues)
+- 💡 **有想法 / 想讨论** → 来 [Discussions](../../discussions) 一起头脑风暴 🧠
+- ✨ **想要新功能** → 在 [Issues](../../issues) 许个愿
+- 🔧 **想动手** → Fork → 改 → 提一个 **Pull Request**
 
-无论是改一个错别字还是加一个数据源，都同样珍贵 💗
+无论是改一个错别字、补一句文档，还是接一个新数据源，**每一份贡献都同样珍贵** 💗
+也欢迎你只是来 [Discussions](../../discussions) 聊聊你的科研工作流、分享你的关键词配置 —— 让我们把这个小雷达一起养大 🚀
 
 ---
 
@@ -202,6 +204,8 @@ python run.py
 ### ⭐ 如果觉得有用，点个 Star 支持一下吧！
 
 <sub>你的每一个 Star，都是作者继续维护的动力 🌱</sub>
+
+<sub>有想法、问题或想一起共建？欢迎来 <a href="../../discussions">💬 Discussions</a> 坐坐！</sub>
 
 <br><br>
 
