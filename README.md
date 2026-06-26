@@ -27,12 +27,12 @@
 
 ## 🆕 最新更新 · What's New
 
-> **2026-06-26 · 新增 Agent Skill 版本** 🤖
+> **2026-06-26 · Agent Skill 现可一键安装为 Claude Code 插件，并支持 Codex** 🤖🔌
 >
-> 现在除了网页版，本仓库还内置一个 **Claude Code / Codex 通用的 Agent Skill**（[`skills/auto-paper-collecter/`](skills/auto-paper-collecter/)）。
-> 一句话 **「运行我的文献雷达」** 就能跑完整条流水线、产出当日文献摘要 ——
-> **纯 Python 标准库、零依赖、免 AI API key**（由运行 skill 的模型本身完成联想扩展 / 相关性过滤 / 摘要 / 热点）。
-> 👉 用法见下方 **「🤖 Skill 版」** 章节与 [`skills/auto-paper-collecter/SKILL.md`](skills/auto-paper-collecter/SKILL.md)。
+> 除了网页版，本仓库内置一个 **Claude Code / Codex 通用的 Agent Skill** —— 一句话 **「运行我的文献雷达」**
+> 就能跑完整条流水线、产出当日文献摘要，**纯 Python 标准库、零依赖、免 AI API key**。
+> **一行命令安装**：`/plugin marketplace add PenghaoJiang/auto-paper-collecter` → `/plugin install auto-paper-collecter@auto-paper-collecter`。
+> 同时新增 [`AGENTS.md`](AGENTS.md)，让 **Codex / OpenAI 等 agent 也能开箱即用**。👉 详见下方 **「🤖 Skill 版」**。
 
 ---
 

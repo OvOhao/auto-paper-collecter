@@ -27,13 +27,12 @@ Every morning, let AI sweep arXiv for you and bring the latest, most relevant pa
 
 ## 🆕 What's New
 
-> **2026-06-26 · Added an Agent Skill version** 🤖
+> **2026-06-26 · The Agent Skill is now a one-command Claude Code plugin, with Codex support** 🤖🔌
 >
-> Besides the web app, the repo now ships a **Claude Code / Codex–compatible Agent Skill** ([`skills/auto-paper-collecter/`](skills/auto-paper-collecter/)).
-> Just say **"run my paper radar"** and it runs the whole pipeline and produces today's digest ——
-> **pure Python stdlib, zero dependencies, no AI API key** (the model running the skill does the query
-> expansion / relevance filtering / summaries / hot-topics itself).
-> 👉 See the **"🤖 Use as an Agent Skill"** section below and [`skills/auto-paper-collecter/SKILL.md`](skills/auto-paper-collecter/SKILL.md).
+> Besides the web app, the repo ships a **Claude Code / Codex–compatible Agent Skill** — just say **"run my paper radar"**
+> and it runs the whole pipeline and produces today's digest, **pure Python stdlib, zero deps, no AI API key**.
+> **Install in one line:** `/plugin marketplace add PenghaoJiang/auto-paper-collecter` → `/plugin install auto-paper-collecter@auto-paper-collecter`.
+> Also added [`AGENTS.md`](AGENTS.md) so **Codex / OpenAI agents work out of the box**. 👉 See **"🤖 Use as an Agent Skill"** below.
 
 ---
 
