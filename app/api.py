@@ -82,6 +82,7 @@ def serialize_paper(p: Paper, saved_map, is_backfill=False):
         "today": _is_today(p.published_at), "isBackfill": is_backfill,
         "saved": bool(sv and sv.saved), "read": bool(sv and sv.read),
         "note": (sv.note if sv else "") or "",
+        "feedback": (sv.feedback if sv else "") or "",
     }
 
 
@@ -232,6 +233,9 @@ def update_library(paper_id: int, body: dict = Body(...), db: Session = Depends(
             setattr(sv, f, bool(body[f]))
     if "note" in body:
         sv.note = str(body["note"])
+    if "feedback" in body:
+        fb = str(body["feedback"])
+        sv.feedback = fb if fb in ("up", "down") else ""
     sv.updated_at = dt.datetime.utcnow()
     db.commit()
     return {"ok": True}

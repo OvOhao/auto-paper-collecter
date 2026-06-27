@@ -74,22 +74,29 @@ async def expand_queries(keyword: str, domain: str = "") -> list:
 
 
 async def filter_relevant(items: list, keyword: str, domain: str = "",
-                          batch_size: int = 25) -> list:
+                          batch_size: int = 25, negatives: list = None) -> list:
     """Keep only items the LLM judges to be CS-domain AND on-topic for `keyword`.
 
     Judged in small concurrent BATCHES — one big call would run past the
     gateway's ~100s Cloudflare limit and 524, which (fail-open) would silently
     let every off-topic paper through. Per-item default is keep=True, so a
-    failed batch degrades to 'keep' rather than dropping good papers."""
+    failed batch degrades to 'keep' rather than dropping good papers.
+
+    `negatives`: titles the user marked 👎 — passed as negative examples so the
+    filter learns to drop similar papers over time."""
     if not items:
         return items
     keep = [True] * len(items)
+    neg_block = ""
+    if negatives:
+        neg_block = ("\n\n用户此前明确标记“不感兴趣”的论文（请据此排除主题/风格类似的）：\n"
+                     + "\n".join(f"- {t}" for t in negatives[:15]))
 
     async def _filter_batch(start, chunk):
         listing = "\n".join(
             f'{j}. {it.title}　[{it.source}/{it.venue or "?"}]' for j, it in enumerate(chunk))
         user = (f"关键词：{keyword}" + (f"（领域：{domain}）" if domain else "")
-                + "\n\n论文列表：\n" + listing)
+                + neg_block + "\n\n论文列表：\n" + listing)
         raw = await chat(
             [{"role": "system", "content": FILTER_SYS}, {"role": "user", "content": user}],
             temperature=0.0, max_tokens=1200, timeout=90,

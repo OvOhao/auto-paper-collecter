@@ -6,7 +6,7 @@ import datetime as dt
 from sqlalchemy.exc import IntegrityError
 
 from ..db import SessionLocal
-from ..models import Paper, UserSettings
+from ..models import Paper, UserSettings, SavedItem
 from ..sources import arxiv, crossref, semanticscholar, rss_news, github
 from .dedup import dedup
 from .summarize import summarize
@@ -52,7 +52,7 @@ def get_or_create_settings(db):
     return s
 
 
-async def _gather_for_keyword(kw, enabled, domain=""):
+async def _gather_for_keyword(kw, enabled, domain="", negatives=None):
     # 1) the LLM expands the keyword into effective, associative search strings.
     #    Capped at 3 — more multiplies requests to rate-limited APIs (arXiv 429).
     queries = (await expand_queries(kw, domain))[:3]
@@ -86,9 +86,9 @@ async def _gather_for_keyword(kw, enabled, domain=""):
             uniq[it.ext_id] = it
     items = list(uniq.values())
 
-    # 4) the LLM drops off-domain / off-topic papers
+    # 4) the LLM drops off-domain / off-topic papers (and learns from 👎 negatives)
     before = len(items)
-    items = await filter_relevant(items, kw, domain)
+    items = await filter_relevant(items, kw, domain, negatives=negatives)
     print(f"[fetch] '{kw}' relevance filter: {before} -> {len(items)}", flush=True)
 
     for it in items:
@@ -113,11 +113,16 @@ async def run_refresh(max_summaries: int = 40):
                 print("[refresh] no keywords set; skipping")
                 return {"new": 0, "keywords": 0}
 
+            # titles the user marked 👎 — fed to the relevance filter as negatives
+            disliked = [row[0] for row in db.query(Paper.title)
+                        .join(SavedItem, SavedItem.paper_id == Paper.id)
+                        .filter(SavedItem.feedback == "down").limit(30).all()]
+
             kws = keywords[:3]
             raw = []
             for i, kw in enumerate(kws, 1):
                 _set_progress(f"抓取与过滤：{kw}（{i}/{len(kws)}）")
-                raw.extend(await _gather_for_keyword(kw, enabled, domain))
+                raw.extend(await _gather_for_keyword(kw, enabled, domain, negatives=disliked))
 
             # Collapse near-duplicates across sources (by DOI / title), then make the
             # batch unique on ext_id too — that is the DB's UNIQUE column, and the

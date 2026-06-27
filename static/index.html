@@ -139,10 +139,24 @@
         </div>
         </sc-if>
 
-        <div style="display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
           <sc-for list="{{ topicTabs }}" as="t" hint-placeholder-count="4">
             <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }} <span style="opacity:0.55;font-weight:600">{{ t.count }}</span></button>
           </sc-for>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;align-items:center">
+          <sc-for list="{{ readTabs }}" as="r" hint-placeholder-count="3">
+            <span onClick="{{ r.onClick }}" style="{{ r.style }}">{{ r.label }}</span>
+          </sc-for>
+          <div style="flex:1"></div>
+          <span style="font-size:12px;color:#8A929E;font-weight:600">排序</span>
+          <sc-for list="{{ sortTabs }}" as="s" hint-placeholder-count="3">
+            <span onClick="{{ s.onClick }}" style="{{ s.style }}">{{ s.label }}</span>
+          </sc-for>
+          <sc-if value="{{ hasIgnored }}" hint-placeholder-val="">
+            <span onClick="{{ toggleIgnored }}" style="{{ ignoredStyle }}">{{ ignoredLabel }}</span>
+          </sc-if>
         </div>
 
         <div style="display:flex;flex-direction:column;gap:14px">
@@ -164,6 +178,8 @@
               <div style="display:flex;align-items:center;gap:7px;margin-top:14px">
                 <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#2A5BD7;background:#EAF0FD;border-radius:7px;padding:5px 10px">✦ AI 摘要</span>
                 <div style="flex:1"></div>
+                <span onClick="{{ p.thumbUp }}" title="相关，多推这类" style="{{ p.upStyle }}">👍</span>
+                <span onClick="{{ p.thumbDown }}" title="不相关，少推这类" style="{{ p.downStyle }}">👎</span>
                 <span onClick="{{ p.toggleSave }}" style="{{ p.saveStyle }}">{{ p.saveIcon }} 收藏</span>
                 <a href="{{ p.url }}" target="_blank" rel="noopener" onClick="{{ p.stopProp }}" style="font-size:12px;font-weight:700;color:#2A5BD7;padding:5px 11px;border-radius:7px;border:1px solid #C9D9F5;background:#F3F7FF;text-decoration:none;display:inline-flex;align-items:center;gap:4px" style-hover="background:#E6EEFD;border-color:#A9C2EF">↗ 访问原文</a>
               </div>
@@ -551,7 +567,7 @@ class Component extends DCLogic {
   state = { screen: 'feed', feedTopic: 'all', selectedId: null, saved: { p1:true, p4:true },
     domain: '', trendWindow: 7, libFilter: 'all', backfillN: 5,
     remote: null, loading: false, form: null, saveMsg: '', trendSel: null,
-    query: '', noteDraft: '', bibMsg: '' };
+    query: '', noteDraft: '', bibMsg: '', feedSort: 'new', feedRead: 'all', showIgnored: false };
 
   // ===== Backend integration =====
   // Served by the backend → same-origin '/api'. Opened as a file:// design → null → demo data.
@@ -847,10 +863,20 @@ class Component extends DCLogic {
     const saveStyle = (on) => 'font-size:12px;font-weight:700;padding:5px 9px;border-radius:7px;cursor:pointer;' + (on ? 'color:#C9970A;background:#FBF3DC;' : 'color:#8A929E;border:1px solid #E4E8ED;');
 
     const isSaved = (p) => R ? !!p.saved : !!S.saved[p.id];
+    const fbStyle = (active, color) => 'font-size:14px;padding:4px 7px;border-radius:7px;cursor:pointer;line-height:1;' + (active ? ('background:'+color+';') : 'opacity:0.45;filter:grayscale(1);');
+    const setFeedback = (p, val) => (e) => {
+      e.stopPropagation();
+      const next = (p.feedback === val) ? '' : val;   // toggle off if same
+      if (R) this.apiSave(p.id, { feedback: next });
+    };
     const decorate = (p) => ({
       ...p, ...colorize(p), open:open(p.id), date: p.date || '',
       saveIcon: isSaved(p) ? '★' : '☆',
       saveStyle: saveStyle(isSaved(p)),
+      upStyle: fbStyle(p.feedback==='up', '#E5F3EC'),
+      downStyle: fbStyle(p.feedback==='down', '#FBE9E9'),
+      thumbUp: setFeedback(p, 'up'),
+      thumbDown: setFeedback(p, 'down'),
       toggleSave: (e) => {
         e.stopPropagation();
         if (R) this.apiSave(p.id, { saved: !p.saved });
@@ -861,9 +887,28 @@ class Component extends DCLogic {
 
     const q = (S.query || '').trim().toLowerCase();
     const matchQ = (p) => !q || ((p.title||'') + ' ' + (p.authors||'') + ' ' + (p.topic||'')).toLowerCase().includes(q);
-    const feedList = (S.feedTopic==='all' ? all : all.filter(p=>p.topic===S.feedTopic)).filter(matchQ).map(decorate);
+    // read/unread filter + hide 👎'd (unless showing ignored) + sort
+    const readOk = (p) => S.feedRead==='unread' ? !p.read : (S.feedRead==='read' ? !!p.read : true);
+    const fbOk = (p) => S.showIgnored ? true : (p.feedback !== 'down');
+    let feedArr = (S.feedTopic==='all' ? all : all.filter(p=>p.topic===S.feedTopic))
+      .filter(matchQ).filter(readOk).filter(fbOk);
+    const _ts = (p) => (p.date ? Date.parse(p.date) : 0) || 0;
+    if (S.feedSort==='old') feedArr = feedArr.slice().sort((a,b)=>_ts(a)-_ts(b));
+    else if (S.feedSort==='source') feedArr = feedArr.slice().sort((a,b)=>(a.source||'').localeCompare(b.source||''));
+    else feedArr = feedArr.slice().sort((a,b)=>_ts(b)-_ts(a));   // 'new' default
+    const feedList = feedArr.map(decorate);
+    const ignoredCount = all.filter(p => p.feedback==='down').length;
     const todayCount = all.filter(p => p.today).length;
     const hasBackfill = all.some(p => p.isBackfill);
+
+    // feed controls: read filter, sort, show-ignored
+    const pill = (active) => 'font-size:12.5px;font-weight:700;border-radius:8px;padding:6px 11px;cursor:pointer;' + (active ? 'color:#fff;background:#16181D;' : 'color:#5B6470;background:#fff;border:1px solid #E4E8ED;');
+    const readTabs = [['all','全部'],['unread','未读'],['read','已读']].map(x => ({ label:x[1], style: pill(S.feedRead===x[0]), onClick: () => this.setState({ feedRead:x[0] }) }));
+    const sortTabs = [['new','最新'],['old','最早'],['source','来源']].map(x => ({ label:x[1], style: pill(S.feedSort===x[0]), onClick: () => this.setState({ feedSort:x[0] }) }));
+    const hasIgnored = ignoredCount > 0;
+    const ignoredLabel = S.showIgnored ? '隐藏已忽略' : ('显示已忽略 ' + ignoredCount);
+    const ignoredStyle = 'font-size:12px;font-weight:700;border-radius:8px;padding:6px 10px;cursor:pointer;color:#B5840E;background:#FBF1D6;';
+    const toggleIgnored = () => this.setState({ showIgnored: !S.showIgnored });
 
     // trends
     const trendRaw = [
@@ -988,6 +1033,7 @@ class Component extends DCLogic {
       isFeed:S.screen==='feed', isTrends:S.screen==='trends', isReport:S.screen==='report',
       isLibrary:S.screen==='library', isSettings:S.screen==='settings',
       topicTabs, feed:feedList,
+      readTabs, sortTabs, hasIgnored, ignoredLabel, ignoredStyle, toggleIgnored,
       todayCount: R ? R.todayCount : todayCount,
       hasBackfill: R ? R.hasBackfill : hasBackfill,
       backfillN: F.backfillN,

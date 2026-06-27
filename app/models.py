@@ -30,6 +30,7 @@ class SavedItem(Base):
     saved = Column(Boolean, default=False)
     read = Column(Boolean, default=False)
     note = Column(Text, default="")
+    feedback = Column(String, default="")   # "" | "up" | "down" (relevance learning)
     updated_at = Column(DateTime, default=dt.datetime.utcnow)
 
 
